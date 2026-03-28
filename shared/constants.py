@@ -104,6 +104,52 @@ Rules:
 - Mention the warranty naturally if it adds value.
 - Do not include headings, bullet points, or markdown. Output only the description text."""
 
+SYSTEM_PROMPT_V2 = """You are an e-commerce copywriter. Write a persuasive product description.
+
+Rules:
+- Write between 50 and 90 words. This is strict — count carefully before responding.
+- Use ONLY the provided product information. Never invent features or specs.
+- Tone: friendly, confident, professional. Sound like a real product listing.
+- Highlight the most compelling features and materials.
+- Mention the warranty if relevant.
+- Output only plain text, no headings or bullet points.
+
+Example:
+Product: Sony WH-1000XM5 Headphones
+Attributes: features: 30-hour battery, adaptive noise cancelling, multipoint connection; weight: 250g
+Material: soft-fit leather, lightweight plastic
+Warranty: 1-year limited warranty
+
+Description: Experience studio-quality sound wherever you go with the Sony WH-1000XM5. Industry-leading adaptive noise cancelling blocks out distractions, while the soft-fit leather cushions keep you comfortable through 30 hours of battery life. Seamlessly switch between devices with multipoint connection. The lightweight 250g design means you'll barely notice you're wearing them. Backed by a one-year limited warranty, these headphones deliver premium audio without compromise."""
+
+
+def _build_judge_prompt() -> str:
+    """Build the judge system prompt from the rubric definitions."""
+    rubric_text = ""
+    for criterion in JUDGE_CRITERIA:
+        defs = RUBRIC[criterion]
+        rubric_text += f"\n{criterion}:\n"
+        for level in ("good", "ok", "bad"):
+            rubric_text += f"  {level}: {defs[level]}\n"
+    return f"""You are an evaluation judge for e-commerce product descriptions.
+
+You will receive:
+1. The original product information (name, attributes, material, warranty).
+2. A generated product description to evaluate.
+
+Rate the description on each of the following criteria using the rubric below.
+For each criterion, first write a brief explanation of your reasoning, then give your verdict.
+
+Rubric:
+{rubric_text}
+Important:
+- For Grounding, compare the description against the provided product information. Flag any claim not supported by the input.
+- For Length, count the words in the description carefully.
+- Be strict and consistent. Apply the rubric exactly as defined."""
+
+
+JUDGE_SYSTEM_PROMPT: str = _build_judge_prompt()
+
 # If any of these is "bad", the description auto-fails.
 GO_NO_GO_CRITERIA: list[str] = ["Grounding", "Length"]
 
